@@ -1,0 +1,135 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+}
+
+/* Base */
+body {
+  @apply bg-white text-zinc-900 font-sans antialiased;
+  min-height: 100vh;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-zinc-300 rounded-full;
+}
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-zinc-400;
+}
+
+/* Minimal box */
+.minimal-box {
+  @apply bg-white border border-zinc-200 shadow-sm;
+}
+
+/* Minimal Gradient text (Optional: strict B&W) */
+.gradient-text {
+  @apply text-black font-bold;
+}
+
+/* Pulse animation for status dots */
+@keyframes pulse-glow {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.2); }
+}
+
+.pulse-dot {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Fade in animation */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+/* Staggered fade in */
+.fade-in-delay-1 { animation-delay: 0.1s; opacity: 0; }
+.fade-in-delay-2 { animation-delay: 0.2s; opacity: 0; }
+.fade-in-delay-3 { animation-delay: 0.3s; opacity: 0; }
+.fade-in-delay-4 { animation-delay: 0.4s; opacity: 0; }
+
+/* Slide in from left */
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.slide-in {
+  animation: slideInLeft 0.3s ease-out forwards;
+}
+
+/* Progress bar animation */
+@keyframes progressPulse {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.progress-animated {
+  background: linear-gradient(90deg, #18181b 0%, #71717a 50%, #18181b 100%);
+  background-size: 200% 100%;
+  animation: progressPulse 2s ease-in-out infinite;
+}
+
+/* Table hover effect */
+.table-row-hover {
+  transition: background-color 0.15s ease;
+}
+.table-row-hover:hover {
+  @apply bg-zinc-50;
+}
+
+/* Button base styles */
+.btn-primary {
+  @apply px-5 py-2.5 rounded-lg font-medium text-white
+         bg-black border border-black
+         hover:bg-zinc-800 hover:text-white
+         active:scale-[0.98] transition-all duration-200;
+}
+
+.btn-secondary {
+  @apply px-5 py-2.5 rounded-lg font-medium text-zinc-900
+         bg-white border border-zinc-200 shadow-sm
+         hover:bg-zinc-50 hover:border-zinc-300
+         active:scale-[0.98] transition-all duration-200;
+}
+
+.btn-danger {
+  @apply px-5 py-2.5 rounded-lg font-medium text-red-600
+         bg-white border border-zinc-200 shadow-sm
+         hover:bg-red-50 hover:border-red-200 hover:text-red-700
+         active:scale-[0.98] transition-all duration-200;
+}
+
+/* Input base styles */
+.input-base {
+  @apply w-full px-4 py-2.5 rounded-lg
+         bg-white border border-zinc-200
+         text-zinc-900 placeholder-zinc-400
+         focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-zinc-900
+         transition-all duration-200;
+}
+
+.input-label {
+  @apply flex items-center gap-2 text-sm font-semibold text-zinc-900 mb-1.5;
+}
