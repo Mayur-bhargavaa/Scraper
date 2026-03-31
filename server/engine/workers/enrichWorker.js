@@ -88,7 +88,8 @@ const enrichWorker = new Worker('enrich', async (bullJob) => {
 });
 
 enrichWorker.on('completed', (job) => {
-  console.log(`✅ Enrich job completed: ${job.id}`);
+  const { enriched = 0, total = 0 } = job.returnvalue || {};
+  console.log(`✅ Enrich job completed for ${job.data?.jobId}: ${enriched}/${total} enriched (queue job ${job.id})`);
 });
 
 enrichWorker.on('failed', (job, err) => {

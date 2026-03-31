@@ -12,6 +12,7 @@ const scoreWorker = new Worker('score', async (bullJob) => {
   console.log(`📊 Scoring started for job ${jobId}: ${leadIds.length} leads`);
 
   const io = globalThis.__io;
+  let scoredCount = 0;
 
   for (let i = 0; i < leadIds.length; i++) {
     try {
@@ -24,6 +25,7 @@ const scoreWorker = new Worker('score', async (bullJob) => {
       lead.tags = tags;
       lead.scored = true;
       await lead.save();
+      scoredCount++;
 
     } catch (error) {
       console.warn(`Scoring failed for lead ${leadIds[i]}:`, error.message);
@@ -49,14 +51,15 @@ const scoreWorker = new Worker('score', async (bullJob) => {
     });
   }
 
-  return { scored: leadIds.length };
+  return { scored: scoredCount, total: leadIds.length };
 }, {
   connection,
   concurrency: 3,
 });
 
 scoreWorker.on('completed', (job) => {
-  console.log(`✅ Score job completed: ${job.id}`);
+  const { scored = 0, total = 0 } = job.returnvalue || {};
+  console.log(`✅ Score job completed for ${job.data?.jobId}: ${scored}/${total} scored (queue job ${job.id})`);
 });
 
 scoreWorker.on('failed', (job, err) => {
