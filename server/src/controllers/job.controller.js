@@ -42,3 +42,17 @@ export const getJob = async (req, res) => {
     res.status(404).json({ error: error.message });
   }
 };
+
+export const deleteJobs = async (req, res) => {
+  try {
+    const { ids } = req.body;
+    if (!Array.isArray(ids)) {
+      return res.status(400).json({ error: 'IDs must be an array' });
+    }
+
+    const result = await jobService.deleteJobs(req.user._id, ids);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};

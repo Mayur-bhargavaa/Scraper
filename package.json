@@ -12,7 +12,8 @@
     "dev:server": "npm run dev --workspace=server",
     "dev:client": "npm run dev --workspace=client",
     "build": "npm run build --workspace=client",
-    "start": "npm run start --workspace=server"
+    "start": "npm run start --workspace=server",
+    "setup:prod": "bash scripts/deploy-prod.sh"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",

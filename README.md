@@ -186,6 +186,26 @@ pm2 start server/src/index.js --name stitchbyte
 # SSL → certbot --nginx
 ```
 
+## 🚀 Production One-Command Setup
+
+On a Linux server with `sudo`, run:
+
+```bash
+DOMAIN=app.yourdomain.com EMAIL=you@yourdomain.com npm run setup:prod
+```
+
+The script will:
+
+1. Install workspace dependencies.
+2. Start MongoDB and Redis with Docker Compose when Docker is available.
+3. Install Nginx and Certbot on Debian/Ubuntu hosts.
+4. Generate the root `.env` file for production.
+5. Install Playwright Chromium and build the client.
+6. Install PM2, write the Nginx reverse proxy config, and start the app.
+7. Request the Let’s Encrypt certificate with Certbot and enable HTTPS redirect.
+
+If you already use external MongoDB or Redis, pass `MONGODB_URI`, `REDIS_HOST`, `REDIS_PORT`, and related values as environment variables before running the command.
+
 ---
 
 ## 📄 License

@@ -100,6 +100,7 @@ const Leads = () => {
   };
 
   return (
+    <>
     <div className="space-y-6 fade-in">
       <div className="flex items-center justify-between">
         <div>
@@ -116,34 +117,7 @@ const Leads = () => {
       </div>
 
       {/* Bulk Action Toolbar */}
-      {selectedLeads.length > 0 && (
-        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[40] slide-up">
-          <div className="bg-black text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-8 border border-zinc-800 backdrop-blur-md">
-            <div className="flex items-center gap-3 border-r border-zinc-700 pr-8">
-              <span className="bg-white text-black w-6 h-6 rounded-full flex items-center justify-center text-xs font-black">
-                {selectedLeads.length}
-              </span>
-              <span className="text-sm font-bold tracking-tight">Leads Selected</span>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleBulkDelete}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-zinc-800 text-red-400 font-bold text-sm transition-colors"
-              >
-                <Trash2 className="w-4 h-4" />
-                Delete
-              </button>
-              <button
-                onClick={() => setSelectedLeads([])}
-                className="px-3 py-1.5 rounded-lg hover:bg-zinc-800 text-zinc-400 font-bold text-sm transition-colors"
-              >
-                Clear
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      
 
       {/* Filters Toolbar */}
       <div className="minimal-box rounded-xl p-4 flex flex-col md:flex-row gap-4 items-center justify-between">
@@ -369,6 +343,35 @@ const Leads = () => {
         filters={Object.fromEntries(searchParams.entries())}
       />
     </div>
+    {selectedLeads.length > 0 && (
+        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[40] slide-up">
+          <div className="bg-black text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-8 border border-zinc-800 backdrop-blur-md">
+            <div className="flex items-center gap-3 border-r border-zinc-700 pr-8">
+              <span className="bg-white text-black w-6 h-6 rounded-full flex items-center justify-center text-xs font-black">
+                {selectedLeads.length}
+              </span>
+              <span className="text-sm font-bold tracking-tight">Leads Selected</span>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleBulkDelete}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-zinc-800 text-red-400 font-bold text-sm transition-colors"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete
+              </button>
+              <button
+                onClick={() => setSelectedLeads([])}
+                className="px-3 py-1.5 rounded-lg hover:bg-zinc-800 text-zinc-400 font-bold text-sm transition-colors"
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      </>
   );
 };
 

@@ -1,17 +1,24 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Briefcase, RefreshCw, MapPin } from 'lucide-react';
+import { Briefcase, RefreshCw, MapPin, Trash2 } from 'lucide-react';
 import api from '../api/client';
 import { useSocket } from '../hooks/useSocket';
+import toast from 'react-hot-toast';
 
 const Jobs = () => {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState({});
+  const [selectedJobs, setSelectedJobs] = useState([]);
+  const [deleting, setDeleting] = useState(false);
   const { onUserUpdate } = useSocket();
 
   useEffect(() => {
     fetchJobs();
   }, []);
+
+  useEffect(() => {
+    setSelectedJobs(prev => prev.filter(id => jobs.some(job => job._id === id)));
+  }, [jobs]);
 
   // Listen for real-time updates
   useEffect(() => {
@@ -49,6 +56,54 @@ const Jobs = () => {
 
   const isActive = (status) => ['running', 'enriching', 'scoring'].includes(status);
 
+  const toggleSelectAll = useCallback(() => {
+    if (selectedJobs.length === jobs.length) {
+      setSelectedJobs([]);
+    } else {
+      setSelectedJobs(jobs.map(job => job._id));
+    }
+  }, [jobs, selectedJobs]);
+
+  const toggleSelectJob = useCallback((id) => {
+    setSelectedJobs(prev => (
+      prev.includes(id) ? prev.filter(jobId => jobId !== id) : [...prev, id]
+    ));
+  }, []);
+
+  const handleBulkDelete = async () => {
+    if (selectedJobs.length === 0 || deleting) return;
+    if (!window.confirm(`Delete ${selectedJobs.length} selected jobs?`)) return;
+
+    setDeleting(true);
+    try {
+      const { data } = await api.delete('/jobs', { data: { ids: selectedJobs } });
+
+      setJobs(prev => prev.filter(job => !data.deletedJobIds.includes(job._id)));
+      setProgress(prev => {
+        const next = { ...prev };
+        for (const id of data.deletedJobIds) {
+          delete next[id];
+        }
+        return next;
+      });
+      setSelectedJobs([]);
+
+      if (data.deletedJobs > 0) {
+        toast.success(`Deleted ${data.deletedJobs} jobs`);
+      }
+      if (data.skippedActive > 0) {
+        toast.error(`${data.skippedActive} active jobs were skipped`);
+      }
+      if (data.deletedJobs === 0 && data.skippedActive === 0) {
+        toast.error('No jobs deleted');
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to delete jobs');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -64,10 +119,33 @@ const Jobs = () => {
           <h1 className="text-2xl font-bold text-zinc-900 tracking-tight">Jobs</h1>
           <p className="text-zinc-500 mt-0.5 font-medium">Monitor your scraping jobs in real-time</p>
         </div>
-        <button onClick={fetchJobs} className="btn-secondary flex items-center gap-2">
-          <RefreshCw className="w-4 h-4" />
-          Refresh
-        </button>
+        <div className="flex items-center gap-3">
+          {jobs.length > 0 && (
+            <label className="flex items-center gap-2 text-sm text-zinc-600 font-semibold px-3 py-2 border border-zinc-200 rounded-lg bg-white">
+              <input
+                type="checkbox"
+                checked={jobs.length > 0 && selectedJobs.length === jobs.length}
+                onChange={toggleSelectAll}
+                className="w-4 h-4 rounded border-zinc-300 text-black focus:ring-black accent-black cursor-pointer"
+              />
+              Select All
+            </label>
+          )}
+          {selectedJobs.length > 0 && (
+            <button
+              onClick={handleBulkDelete}
+              disabled={deleting}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg border border-red-200 bg-red-50 text-red-700 font-semibold disabled:opacity-60"
+            >
+              <Trash2 className="w-4 h-4" />
+              Delete ({selectedJobs.length})
+            </button>
+          )}
+          <button onClick={fetchJobs} className="btn-secondary flex items-center gap-2">
+            <RefreshCw className="w-4 h-4" />
+            Refresh
+          </button>
+        </div>
       </div>
 
       {jobs.length === 0 ? (
@@ -81,11 +159,22 @@ const Jobs = () => {
           {jobs.map(job => {
             const config = statusConfig[job.status] || statusConfig.pending;
             const prog = progress[job._id];
+            const isSelected = selectedJobs.includes(job._id);
 
             return (
-              <div key={job._id} className="minimal-box rounded-xl p-6 hover:border-black transition-all duration-300">
+              <div
+                key={job._id}
+                className={`minimal-box rounded-xl p-6 transition-all duration-300 ${isSelected ? 'border-black bg-zinc-50' : 'hover:border-black'}`}
+              >
                 <div className="flex items-start justify-between mb-5">
-                  <div className="flex-1">
+                  <div className="flex items-start gap-3 flex-1">
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => toggleSelectJob(job._id)}
+                      className="mt-1 w-4 h-4 rounded border-zinc-300 text-black focus:ring-black accent-black cursor-pointer"
+                    />
+                    <div className="flex-1">
                     <div className="flex items-center gap-3 mb-1.5">
                       <h3 className="text-lg font-bold text-zinc-900">{job.keyword}</h3>
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wide border ${config.bg} ${config.text}`}>
@@ -102,6 +191,7 @@ const Jobs = () => {
                       </span>
                       <span>Radius: {job.radius}km</span>
                       <span>{job.mode.toUpperCase()}</span>
+                    </div>
                     </div>
                   </div>
                   <div className="text-right text-xs font-medium">
