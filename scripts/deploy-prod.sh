@@ -59,6 +59,7 @@ install_system_packages() {
   if command -v apt-get >/dev/null 2>&1; then
     log "Installing Nginx, Certbot, and Playwright system dependencies"
     sudo apt-get update
+    sudo apt-get -f install -y
     sudo apt-get install -y nginx certbot python3-certbot-nginx \
       libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 \
       libxrandr2 libxcomposite1 libxdamage1 libxkbcommon0 libgbm1 \
