@@ -13,7 +13,11 @@
     "dev:client": "npm run dev --workspace=client",
     "build": "npm run build --workspace=client",
     "start": "npm run start --workspace=server",
-    "setup:prod": "bash scripts/deploy-prod.sh"
+    "setup:prod": "bash scripts/deploy-prod.sh",
+    "start:prod": "PORT=${PORT:-5001} pm2 start ecosystem.config.cjs --env production --only stitchbyte",
+    "restart:prod": "PORT=${PORT:-5001} pm2 restart stitchbyte || PORT=${PORT:-5001} pm2 start ecosystem.config.cjs --env production --only stitchbyte",
+    "logs:prod": "pm2 logs stitchbyte --lines 200",
+    "status:prod": "pm2 show stitchbyte && pm2 list"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",

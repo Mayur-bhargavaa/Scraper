@@ -6,7 +6,8 @@ PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DEPLOY_USER="${SUDO_USER:-${USER:-$(id -un)}}"
 DEPLOY_HOME="${HOME:-$(getent passwd "$DEPLOY_USER" | cut -d: -f6)}"
 APP_NAME="stitchbyte"
-SERVER_PORT="${SERVER_PORT:-5000}"
+SERVER_PORT="${SERVER_PORT:-5001}"
+PLAYWRIGHT_CACHE_DIR="${PLAYWRIGHT_CACHE_DIR:-/home/${DEPLOY_USER}/.cache/ms-playwright}"
 
 log() {
   printf '\n[%s] %s\n' "$APP_NAME" "$1"
@@ -56,9 +57,13 @@ compose_up() {
 
 install_system_packages() {
   if command -v apt-get >/dev/null 2>&1; then
-    log "Installing Nginx and Certbot"
+    log "Installing Nginx, Certbot, and Playwright system dependencies"
     sudo apt-get update
-    sudo apt-get install -y nginx certbot python3-certbot-nginx
+    sudo apt-get install -y nginx certbot python3-certbot-nginx \
+      libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 \
+      libxrandr2 libxcomposite1 libxdamage1 libxkbcommon0 libgbm1 \
+      libasound2 libpangocairo-1.0-0 libxss1 libgtk-3-0 libu2f-udev \
+      fonts-liberation ca-certificates libxcb1 libx11-6
     sudo systemctl enable --now nginx
   else
     log "apt-get was not found; install Nginx and Certbot manually before continuing"
@@ -116,8 +121,18 @@ install_dependencies() {
 }
 
 install_playwright() {
+  if [[ -d "$PLAYWRIGHT_CACHE_DIR" ]]; then
+    # Repair immutable or root-owned Playwright binaries that can cause EACCES.
+    sudo chattr -R -i "$PLAYWRIGHT_CACHE_DIR" >/dev/null 2>&1 || true
+    sudo rm -rf "$PLAYWRIGHT_CACHE_DIR"
+  fi
+
+  sudo mkdir -p "$PLAYWRIGHT_CACHE_DIR"
+  sudo chown -R "$DEPLOY_USER":"$DEPLOY_USER" "$PLAYWRIGHT_CACHE_DIR"
+
   log "Installing Playwright Chromium"
-  (cd "$PROJECT_DIR/server" && npx playwright install chromium)
+  sudo -u "$DEPLOY_USER" -H bash -lc "cd '$PROJECT_DIR/server' && PLAYWRIGHT_BROWSERS_PATH='$PLAYWRIGHT_CACHE_DIR' npx playwright install chromium"
+  sudo find "$PLAYWRIGHT_CACHE_DIR" -type f -name 'chrome-headless-shell*' -exec chmod +x {} + >/dev/null 2>&1 || true
 }
 
 build_client() {
@@ -194,9 +209,28 @@ issue_certificate() {
 start_pm2() {
   log "Starting application with PM2"
   pm2 delete stitchbyte >/dev/null 2>&1 || true
-  (cd "$PROJECT_DIR" && pm2 start ecosystem.config.cjs --env production --only stitchbyte)
+  (cd "$PROJECT_DIR" && PORT="$SERVER_PORT" pm2 start ecosystem.config.cjs --env production --only stitchbyte)
   pm2 save
   sudo env PATH="$PATH" pm2 startup systemd -u "$DEPLOY_USER" --hp "$DEPLOY_HOME"
+}
+
+wait_for_backend_health() {
+  log "Waiting for backend health check"
+  local retries=20
+  local delay_seconds=2
+  local health_url="http://127.0.0.1:${SERVER_PORT}/api/health"
+
+  for _ in $(seq 1 "$retries"); do
+    if curl -fsS "$health_url" >/dev/null 2>&1; then
+      log "Backend health check passed"
+      return 0
+    fi
+    sleep "$delay_seconds"
+  done
+
+  pm2 logs stitchbyte --lines 120 --nostream || true
+  printf 'Backend health check failed on %s\n' "$health_url" >&2
+  exit 1
 }
 
 main() {
@@ -226,6 +260,7 @@ main() {
   configure_nginx
   issue_certificate
   start_pm2
+  wait_for_backend_health
 
   log "Deployment complete"
   printf 'Site: https://%s\n' "$DOMAIN"
